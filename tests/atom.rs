@@ -22,11 +22,40 @@ use std::sync::*;
 use std::thread;
 
 #[test]
+fn as_ptr() {
+    let a_empty = Atom::<Box<usize>>::empty();
+    assert!(a_empty.as_ptr(Ordering::Relaxed).is_null());
+
+    let contents = Arc::new(5);
+    let a_new = Atom::new(contents.clone());
+    assert_eq!(
+        a_new.as_ptr(Ordering::Relaxed),
+        contents.into_raw() as *mut _
+    );
+}
+
+#[test]
+fn set() {
+    let a = Atom::empty();
+    a.set(Box::new(5), Ordering::Relaxed);
+    assert_eq!(a.take(Ordering::Relaxed), Some(Box::new(5)));
+}
+
+#[test]
 fn swap() {
     let a = Atom::empty();
     assert_eq!(a.swap(Box::new(1u8), Ordering::AcqRel), None);
     assert_eq!(a.swap(Box::new(2u8), Ordering::AcqRel), Some(Box::new(1u8)));
     assert_eq!(a.swap(Box::new(3u8), Ordering::AcqRel), Some(Box::new(2u8)));
+}
+
+#[test]
+fn into_inner() {
+    let a_empty = Atom::<Box<usize>>::empty();
+    assert_eq!(a_empty.into_inner(Ordering::Relaxed), None);
+
+    let a_new = Atom::new(Box::new(12));
+    assert_eq!(a_new.into_inner(Ordering::Relaxed), Some(Box::new(12)));
 }
 
 #[test]

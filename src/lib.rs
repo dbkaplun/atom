@@ -60,12 +60,27 @@ where
         }
     }
 
+    /// Returns a raw pointer to the underlying data in this atom.
+    pub fn as_ptr(&self, order: Ordering) -> *mut P {
+        self.inner.load(order) as *mut P
+    }
+
+    /// Sets the contained value.
+    pub fn set(&self, val: P, order: Ordering) {
+        self.inner.store(val.into_raw(), order)
+    }
+
     /// Swap a new value into the Atom, This will try multiple
     /// times until it succeeds. The old value will be returned.
     pub fn swap(&self, v: P, order: Ordering) -> Option<P> {
         let new = v.into_raw();
         let old = self.inner.swap(new, order);
         unsafe { Self::inner_from_raw(old) }
+    }
+
+    /// Unwraps the value.
+    pub fn into_inner(self, order: Ordering) -> Option<P> {
+        self.take(order)
     }
 
     /// Take the value of the Atom replacing it with null pointer
